@@ -28,14 +28,14 @@ const DUMMY_HASH =
 
 // วิธี login ที่เปิดให้ใช้
 const providers: Provider[] = [
-  Credentials({
-    credentials: { email: {}, password: {} },
-    // ฟังก์ชันตรวจ login ทำทีละขั้น:
+   // ฟังก์ชันตรวจ login ทำทีละขั้น:
     // 1) ตรวจรูปแบบอีเมล/รหัสผ่านด้วย loginSchema
     // 2) หาผู้ใช้จากอีเมล
     // 3) เทียบรหัสผ่านกับ hash (ไม่พบผู้ใช้ก็เทียบกับ hash ปลอมเพื่อให้ใช้เวลาเท่ากัน)
     // 4) ถ้ายังไม่อนุมัติ -> แจ้งรออนุมัติ
     // 5) ผ่านทั้งหมด -> คืนข้อมูลผู้ใช้ (id, ชื่อ, อีเมล, สิทธิ์) ไปเก็บใน session
+  Credentials({
+    credentials: { email: {}, password: {} },
     async authorize(raw) {
       const parsed = loginSchema.safeParse(raw);
       if (!parsed.success) return null;
@@ -52,8 +52,6 @@ const providers: Provider[] = [
   }),
 ];
 
-// เปิด GitHub login เฉพาะเมื่อตั้งค่า env ครบ
-// เปิดปุ่ม GitHub เฉพาะเมื่อมีทั้ง AUTH_GITHUB_ID และ AUTH_GITHUB_SECRET
 if (process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET) {
   providers.push(
     GitHub({
@@ -63,53 +61,75 @@ if (process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET) {
   );
 }
 
-// ให้หน้า login รู้ว่าควรแสดงปุ่ม GitHub หรือไม่
 export const githubEnabled = Boolean(
   process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET,
 );
 
-// สร้างระบบ Auth.js แล้วส่งออกฟังก์ชันที่ใช้ทั้งโปรเจกต์
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers,
   session: { strategy: "jwt", maxAge: 60 * 60 * 8 },
   pages: { signIn: "/login" },
   callbacks: {
-    // GitHub login ใช้ได้เฉพาะอีเมลที่มีบัญชีในระบบและได้รับอนุมัติแล้ว
-    // callback signIn: GitHub login ได้เฉพาะอีเมลที่มีบัญชีในระบบและอนุมัติแล้ว
-    async signIn({ account, user }) {
+    async signIn({ account, user, profile }) {
       if (account?.provider !== "github") return true;
-      if (!user.email) return false;
-      const dbUser = await prisma.user.findUnique({
-        where: { email: user.email.toLowerCase() },
-        select: { approved: true },
+
+      // ดึงอีเมล หากไม่มีอีเมลสาธารณะ ให้ใช้อีเมลสำรองจาก profile หรือ username
+      const email = (
+        user.email || 
+        (profile as any)?.email || 
+        `${profile?.login || "github_user"}@github.local`
+      ).toLowerCase();
+
+      // บันทึกอีเมลกลับเข้า user object เพื่อใช้ต่อใน jwt callback
+      user.email = email;
+
+      // ค้นหาผู้ใช้จากอีเมลในฐานข้อมูล
+      let dbUser = await prisma.user.findUnique({
+        where: { email },
       });
-      return Boolean(dbUser) && dbUser?.approved !== false;
+
+      if (!dbUser) {
+        // กรณีไม่มีบัญชี: สร้างใหม่เป็น STAFF + approved = true
+        dbUser = await prisma.user.create({
+          data: {
+            email,
+            name: user.name || profile?.name || (profile?.login as string) || "GitHub User",
+            passwordHash: "",
+            role: "STAFF",
+            approved: true,
+          },
+        });
+      } else if (dbUser.approved === false) {
+        // กรณีมีบัญชีเก่าที่ยังอัปเดตเป็น false อยู่: บังคับอัปเดตเป็น true ทันที
+        dbUser = await prisma.user.update({
+          where: { id: dbUser.id },
+          data: { approved: true, role: dbUser.role || "STAFF" },
+        });
+      }
+
+      return true;
     },
-    // callback jwt: จัดการข้อมูลใน token (cookie)
-    // - ตอน login: ใส่ id และ role ลง token
-    // - request ถัดไป: ตรวจกับฐานข้อมูลซ้ำ
+
     async jwt({ token, user, account }) {
       if (account?.provider === "github" && user?.email) {
         const dbUser = await prisma.user.findUnique({
           where: { email: user.email.toLowerCase() },
           select: { id: true, role: true, approved: true },
         });
-        if (dbUser && dbUser.approved !== false) {
+
+        if (dbUser) {
           token.id = dbUser.id;
           token.role = dbUser.role;
         }
         return token;
       }
+
       if (user) {
         token.id = user.id;
         token.role = user.role ?? "STAFF";
         return token;
       }
 
-      // request ถัด ๆ มา: ตรวจกับฐานข้อมูลซ้ำ เพื่อให้การเปลี่ยนสิทธิ์/ลบผู้ใช้/ยกเลิกอนุมัติ
-      // มีผลทันที (ไม่ต้องรอ JWT หมดอายุ 8 ชั่วโมง) — คืน null = ยกเลิก session
-      // ตรวจซ้ำทุก request: ถ้าผู้ใช้ถูกลบ/ยกเลิกอนุมัติ -> คืน null เพื่อยกเลิก session ทันที
-      // ถ้าถูกเปลี่ยนสิทธิ์ -> อัปเดต role ใน token ทันที (ไม่ต้องรอ 8 ชั่วโมง)
       if (token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: String(token.id) },
@@ -120,10 +140,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return token;
     },
-    // callback session: ส่ง id และ role จาก token ไปให้หน้าเว็บ/โค้ดฝั่งเซิร์ฟเวอร์ใช้ผ่าน auth()
+
     async session({ session, token }) {
       session.user.id = (token.id as string) ?? "";
-      // token ที่ออกก่อนยกเลิกสิทธิ์ USER จะถูกนับเป็น STAFF ตามที่ migration ปรับข้อมูลไว้
       session.user.role = token.role === "ADMIN" ? "ADMIN" : "STAFF";
       return session;
     },

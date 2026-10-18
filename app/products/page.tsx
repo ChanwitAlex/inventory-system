@@ -148,26 +148,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
           </select>
         </div>
 
-        <div>
-          {/* ตัวกรอง: สถานะสต็อก (ปกติ / ใกล้หมด / หมด) */}
-          <label htmlFor="stock" className="label">สถานะสต็อก</label>
-          <select id="stock" name="stock" defaultValue={sp.stock ?? ""} className="input">
-            <option value="">ทั้งหมด</option>
-            <option value="ok">ปกติ</option>
-            <option value="low">ใกล้หมด</option>
-            <option value="out">หมดสต็อก</option>
-          </select>
-        </div>
 
-        <div>
-          {/* ตัวกรอง: สถานะสินค้า (เปิดขาย / ปิดขาย) */}
-          <label htmlFor="status" className="label">สถานะสินค้า</label>
-          <select id="status" name="status" defaultValue={sp.status ?? ""} className="input">
-            <option value="">ทั้งหมด</option>
-            <option value="active">เปิดขาย</option>
-            <option value="inactive">ปิดขาย</option>
-          </select>
-        </div>
 
         {/* ปุ่มค้นหา (ส่งฟอร์มแบบ GET ค่าไปอยู่ใน URL) และปุ่มล้างตัวกรอง */}
         <div className="flex gap-2 md:col-span-4">

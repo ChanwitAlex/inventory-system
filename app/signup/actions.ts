@@ -1,6 +1,6 @@
 /**
  * ไฟล์: app/signup/actions.ts — Server Action สมัครสมาชิก
- * ผู้สมัครเองจะเป็น STAFF แต่ approved = false: ต้องรอ ADMIN กด 'อนุมัติ' ที่หน้า /admin/users จึง login ได้
+ * ผู้สมัครเองจะเป็น STAFF และ approved = true: สามารถ login ได้ทันทีไม่ต้องรอ ADMIN อนุมัติ
  */
 "use server";
 
@@ -36,9 +36,9 @@ export async function signUp(_prev: SignUpState, formData: FormData): Promise<Si
   const passwordHash = await bcrypt.hash(password, 12);
 
   try {
-    // ผู้สมัครเองเป็น STAFF แต่ยังเข้าสู่ระบบไม่ได้ จนกว่าผู้ดูแลระบบจะอนุมัติ
+    // กำหนดบทบาทเป็น STAFF และอนุมัติทันที (approved: true) เพื่อให้ล็อกอินได้เลย
     await prisma.user.create({
-      data: { name, email, passwordHash, role: "STAFF", approved: false },
+      data: { name, email, passwordHash, role: "STAFF", approved: true },
     });
   } catch (e) {
     // อีเมลนี้มีผู้ใช้แล้ว -> แจ้งที่ช่องอีเมล
