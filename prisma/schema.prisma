@@ -10,7 +10,6 @@ datasource db {
 enum Role {
   ADMIN
   STAFF
-  USER
 }
 
 model User {
@@ -18,7 +17,8 @@ model User {
   name         String?
   email        String   @unique
   passwordHash String
-  role         Role     @default(USER)
+  role         Role     @default(STAFF)
+  approved     Boolean  @default(true) // false = สมัครเองและรอผู้ดูแลระบบอนุมัติ
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

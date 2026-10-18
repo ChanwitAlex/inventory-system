@@ -9,7 +9,7 @@ import StockButtons from "./stock-buttons";
 type SP = {
   search?: string;
   category?: string;
-  status?: string;
+  sort?: string;
   page?: string;
   saved?: string;
 };
@@ -46,23 +46,27 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const session = await auth();
   const role = session?.user?.role;
 
+  // เรียงตามราคาเท่านั้น (ค่าเริ่มต้น: ราคาต่ำสุดก่อน)
+  const sort = sp.sort === "price_desc" ? "price_desc" : "price_asc";
+
   const { items, total, page, totalPages } = await listProducts({
     search: sp.search,
     category: sp.category,
-    status: sp.status,
+    sort,
     page: Number(sp.page) || 1,
   });
 
   const pageHref = (p: number) => {
     const q = new URLSearchParams();
-    for (const k of ["search", "category", "status"] as const) {
+    for (const k of ["search", "category"] as const) {
       if (sp[k]) q.set(k, sp[k]!);
     }
+    q.set("sort", sort);
     q.set("page", String(p));
     return `/products?${q.toString()}`;
   };
 
-  const hasFilter = Boolean(sp.search || sp.category || sp.status);
+  const hasFilter = Boolean(sp.search || sp.category);
 
   return (
     <div className="p-6">
@@ -73,13 +77,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         </div>
 
         <div className="flex items-center gap-2">
-          {/* ปุ่มจัดการผู้ใช้สำหรับ ADMIN (ปรับเป็นปุ่มแล้ว) */}
+          {/* ปุ่มกลับหน้าภาพรวม (เฉพาะ ADMIN) */}
           {canManageUsers(role) && (
-            <Link
-              href="/admin/users"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 rounded-md text-sm font-medium transition-colors shadow-sm"
-            >
-              ⚙️ จัดการผู้ใช้ (Admin)
+            <Link href="/admin" className="btn-ghost text-sm">
+              ← กลับหน้าภาพรวม
             </Link>
           )}
 
@@ -115,11 +116,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         </div>
 
         <div>
-          <label htmlFor="status" className="label">สถานะ</label>
-          <select id="status" name="status" defaultValue={sp.status ?? ""} className="input">
-            <option value="">ทั้งหมด</option>
-            <option value="active">เปิดขาย</option>
-            <option value="inactive">ปิดขาย</option>
+          <label htmlFor="sort" className="label">เรียงตาม</label>
+          <select id="sort" name="sort" defaultValue={sort} className="input">
+            <option value="price_asc">ราคาต่ำสุด</option>
+            <option value="price_desc">ราคาสูงสุด</option>
           </select>
         </div>
 

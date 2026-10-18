@@ -30,8 +30,10 @@ export async function signUp(_prev: SignUpState, formData: FormData): Promise<Si
   const passwordHash = await bcrypt.hash(password, 12);
 
   try {
-    // ผู้สมัครใหม่เป็น USER (ดูอย่างเดียว) เสมอ ผู้ดูแลระบบเป็นคนปรับสิทธิ์ให้ภายหลัง
-    await prisma.user.create({ data: { name, email, passwordHash, role: "USER" } });
+    // ผู้สมัครเองเป็น STAFF แต่ยังเข้าสู่ระบบไม่ได้ จนกว่าผู้ดูแลระบบจะอนุมัติ
+    await prisma.user.create({
+      data: { name, email, passwordHash, role: "STAFF", approved: false },
+    });
   } catch (e) {
     if (isUniqueViolation(e)) {
       return { errors: { email: ["อีเมลนี้ถูกใช้งานแล้ว"] }, values };

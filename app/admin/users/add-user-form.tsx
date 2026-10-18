@@ -44,7 +44,7 @@ export default function AddUserForm() {
       <div>
         <label className="block text-xs font-medium text-gray-700 mb-1">ตำแหน่ง / สิทธิ์ (Role)</label>
         <select name="role" defaultValue="STAFF" className="input w-full border px-3 py-1.5 rounded text-sm bg-white">
-          <option value="STAFF">STAFF (จัดการสินค้าได้)</option>
+          <option value="STAFF">STAFF (เพิ่ม/แก้ไขสินค้า)</option>
           <option value="ADMIN">ADMIN (ผู้ดูแลระบบ)</option>
         </select>
       </div>

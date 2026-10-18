@@ -3,9 +3,9 @@ import { NextResponse } from "next/server";
 import { redirect } from "next/navigation";
 import { auth } from "@/app/auth";
 
-export type Role = "ADMIN" | "STAFF" | "USER";
+export type Role = "ADMIN" | "STAFF";
 
-/** Admin และ Staff มีสิทธิ์เพิ่ม/แก้ไขสินค้า และปรับสต็อก */
+/** Admin และ Staff มีสิทธิ์เพิ่ม/แก้ไขสินค้า และปรับสต็อก (ระบบมีสิทธิ์แค่ 2 ระดับ) */
 export const canWrite = (role?: string) => role === "ADMIN" || role === "STAFF";
 
 /** เฉพาะ Admin เท่านั้นที่ลบสินค้าได้ */

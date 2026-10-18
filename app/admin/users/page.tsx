@@ -1,69 +1,112 @@
-"use client";
+import Link from "next/link";
+import prisma from "@/app/lib/prisma";
+import { requirePageRole } from "@/app/lib/permissions";
+import AddUserForm from "./add-user-form";
+import DeleteUserButton from "./delete-user-button";
+import { updateUserRole } from "./actions";
 
-import { useState } from "react";
-import { createStaffUser } from "./actions";
+const ROLE_LABEL = {
+  ADMIN: "ผู้ดูแลระบบ",
+  STAFF: "เจ้าหน้าที่",
+} as const;
 
-export default function AddUserForm() {
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<{ success?: boolean; text?: string }>({});
+const dateFmt = new Intl.DateTimeFormat("th-TH", { dateStyle: "medium" });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    setMsg({});
+export default async function UsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ok?: string; error?: string }>;
+}) {
+  const me = await requirePageRole(["ADMIN"]);
+  const { ok, error } = await searchParams;
 
-    const formData = new FormData(e.currentTarget);
-    const res = await createStaffUser(null, formData);
-    setLoading(false);
-
-    if (res.success) {
-      setMsg({ success: true, text: res.message });
-      (e.target as HTMLFormElement).reset();
-    } else {
-      setMsg({ success: false, text: res.message });
-    }
-  };
+  const users = await prisma.user.findMany({
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true, email: true, role: true, createdAt: true },
+  });
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-3">
-      <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">ชื่อ - นามสกุล</label>
-        <input name="name" required placeholder="สมชาย ใจดี" className="input w-full border px-3 py-1.5 rounded text-sm" />
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">จัดการผู้ใช้และสิทธิ์</h1>
+          <p className="text-sm text-muted">
+            ผู้ใช้ทั้งหมด {users.length} คน
+          </p>
+        </div>
+        <Link href="/admin" className="btn-ghost text-sm">
+          ← ภาพรวม
+        </Link>
       </div>
 
-      <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">อีเมล</label>
-        <input name="email" type="email" required placeholder="staff@example.com" className="input w-full border px-3 py-1.5 rounded text-sm" />
-      </div>
+      {ok && <p className="mb-4 rounded-md bg-brand-soft px-3 py-2 text-sm text-brand">{ok}</p>}
+      {error && (
+        <p className="mb-4 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
+      )}
 
-      <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">รหัสผ่าน</label>
-        <input name="password" type="password" required placeholder="••••••••" className="input w-full border px-3 py-1.5 rounded text-sm" />
-      </div>
+      <section className="card mb-6 p-4">
+        <h2 className="mb-3 font-medium">เพิ่มผู้ใช้ใหม่</h2>
+        <AddUserForm />
+      </section>
 
-      <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">ตำแหน่ง / สิทธิ์ (Role)</label>
-        <select name="role" defaultValue="STAFF" className="input w-full border px-3 py-1.5 rounded text-sm bg-white">
-          <option value="STAFF">STAFF (จัดการสินค้าได้)</option>
-          <option value="USER">USER (ดูได้อย่างเดียว)</option>
-          <option value="ADMIN">ADMIN (ผู้ดูแลระบบ)</option>
-        </select>
+      <div className="card overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="border-b border-line bg-paper text-left text-muted">
+            <tr>
+              <th className="px-4 py-3 font-medium">ชื่อ</th>
+              <th className="px-4 py-3 font-medium">อีเมล</th>
+              <th className="px-4 py-3 font-medium">สิทธิ์</th>
+              <th className="px-4 py-3 font-medium">เพิ่มเมื่อ</th>
+              <th className="px-4 py-3 text-center font-medium">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line">
+            {users.map((u) => {
+              const isMe = u.id === me.id;
+              return (
+                <tr key={u.id} className="align-middle">
+                  <td className="px-4 py-3 font-medium">
+                    {u.name ?? "-"}
+                    {isMe && <span className="badge ml-2 bg-brand-soft text-brand">คุณ</span>}
+                  </td>
+                  <td className="px-4 py-3">{u.email}</td>
+                  <td className="px-4 py-3">
+                    {isMe ? (
+                      ROLE_LABEL[u.role as keyof typeof ROLE_LABEL] ?? u.role
+                    ) : (
+                      <form action={updateUserRole.bind(null, u.id)} className="flex items-center gap-2">
+                        <select
+                          name="role"
+                          defaultValue={u.role}
+                          aria-label={`สิทธิ์ของ ${u.email}`}
+                          className="input w-auto text-xs py-1 px-2"
+                        >
+                          {(Object.keys(ROLE_LABEL) as (keyof typeof ROLE_LABEL)[]).map((r) => (
+                            <option key={r} value={r}>
+                              {r} ({ROLE_LABEL[r]})
+                            </option>
+                          ))}
+                        </select>
+                        <button className="btn-ghost btn-sm">บันทึก</button>
+                      </form>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-muted">{dateFmt.format(u.createdAt)}</td>
+                  <td className="px-4 py-3 text-center">
+                    {isMe ? (
+                      <span className="text-xs text-muted">-</span>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2">
+                        <DeleteUserButton id={u.id} email={u.email} />
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-
-      <div className="md:col-span-4 flex items-center justify-between mt-2">
-        {msg.text && (
-          <span className={`text-xs font-medium ${msg.success ? "text-emerald-600" : "text-rose-600"}`}>
-            {msg.text}
-          </span>
-        )}
-        <button
-          type="submit"
-          disabled={loading}
-          className="ml-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded shadow-sm disabled:opacity-50"
-        >
-          {loading ? "กำลังบันทึก..." : "+ บันทึกผู้ใช้ใหม่"}
-        </button>
-      </div>
-    </form>
+    </div>
   );
 }

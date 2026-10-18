@@ -1,7 +1,7 @@
 "use server";
 
 import { AuthError } from "next-auth";
-import { signIn } from "@/app/auth";
+import { PENDING_APPROVAL_CODE, signIn } from "@/app/auth";
 
 export type LoginState = { error?: string };
 
@@ -26,7 +26,7 @@ function fail(key: string) {
 
 function safeRedirect(value: FormDataEntryValue | null) {
   const v = typeof value === "string" ? value : "";
-  return v.startsWith("/") && !v.startsWith("//") ? v : "/products";
+  return v.startsWith("/") && !v.startsWith("//") ? v : "/";
 }
 
 export async function authenticate(
@@ -48,6 +48,9 @@ export async function authenticate(
     });
   } catch (e) {
     if (e instanceof AuthError) {
+      if ((e as { code?: string }).code === PENDING_APPROVAL_CODE) {
+        return { error: "บัญชีของคุณรอผู้ดูแลระบบอนุมัติ ยังเข้าสู่ระบบไม่ได้" };
+      }
       fail(key);
       return { error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" };
     }
@@ -57,5 +60,5 @@ export async function authenticate(
 }
 
 export async function githubSignIn() {
-  await signIn("github", { redirectTo: "/products" });
+  await signIn("github", { redirectTo: "/" });
 }

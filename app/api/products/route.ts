@@ -7,7 +7,7 @@ import { z } from "zod";
 
 // GET /api/products?search=&category=&status=&stock=&sort=&page=&pageSize=
 export async function GET(request: Request) {
-  const guard = await requireApiRole(request, ["ADMIN", "STAFF", "USER"]);
+  const guard = await requireApiRole(request, ["ADMIN", "STAFF"]);
   if (guard.error) return guard.error;
 
   const sp = new URL(request.url).searchParams;

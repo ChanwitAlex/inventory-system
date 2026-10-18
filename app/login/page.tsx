@@ -10,7 +10,7 @@ type Props = {
 
 export default async function LoginPage({ searchParams }: Props) {
   const session = await auth();
-  if (session?.user) redirect("/products");
+  if (session?.user) redirect("/");
 
   const { callbackUrl, registered } = await searchParams;
 
@@ -24,11 +24,11 @@ export default async function LoginPage({ searchParams }: Props) {
       <div className="card p-6">
         {registered && (
           <p className="mb-4 rounded-md bg-brand-soft px-3 py-2 text-sm text-brand">
-            สมัครสมาชิกเรียบร้อยแล้ว เข้าสู่ระบบได้เลย
+            สมัครสมาชิกเรียบร้อยแล้ว กรุณารอผู้ดูแลระบบอนุมัติก่อนเข้าสู่ระบบ
           </p>
         )}
 
-        <LoginForm callbackUrl={callbackUrl ?? "/products"} />
+        <LoginForm callbackUrl={callbackUrl ?? "/"} />
 
         {githubEnabled && (
           <>

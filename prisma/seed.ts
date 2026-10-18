@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { inspect } from "node:util";
 import bcrypt from "bcryptjs";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "../app/generated/prisma/client";
@@ -10,16 +11,21 @@ const prisma = new PrismaClient({
 async function main() {
   // 1. สร้างผู้ใช้งาน
   const users = [
-    { name: "Admin", email: "admin@example.com", password: "Admin@12345", role: "ADMIN" },
+    {
+      name: "Admin",
+      email: (process.env.SEED_ADMIN_EMAIL || "admin@example.com").toLowerCase(),
+      password: process.env.SEED_ADMIN_PASSWORD || "Admin@12345",
+      role: "ADMIN",
+    },
     { name: "Staff", email: "staff@example.com", password: "Staff@12345", role: "STAFF" },
-    { name: "Viewer", email: "user@example.com", password: "User@12345", role: "USER" },
   ] as const;
 
   for (const u of users) {
     const passwordHash = await bcrypt.hash(u.password, 12);
     await prisma.user.upsert({
       where: { email: u.email },
-      update: { role: u.role, passwordHash },
+      // ไม่แตะบัญชีที่มีอยู่แล้ว เพื่อไม่ให้รหัสผ่าน/สิทธิ์ถูกรีเซ็ตเมื่อรัน seed ซ้ำ
+      update: {},
       create: {
         name: u.name,
         email: u.email,
@@ -101,6 +107,10 @@ async function main() {
 main()
   .catch((e) => {
     console.error(e);
+    // แสดงสาเหตุจริงของ Prisma (มักถูกซ่อนเป็น [Object])
+    if (e && typeof e === "object" && "cause" in e) {
+      console.error("สาเหตุ:", inspect((e as { cause: unknown }).cause, { depth: 6 }));
+    }
     process.exit(1);
   })
   .finally(() => prisma.$disconnect());

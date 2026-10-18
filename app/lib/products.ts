@@ -1,4 +1,8 @@
+import type { Prisma } from "@/app/generated/prisma/client";
+import { LOW_STOCK_THRESHOLD, PAGE_SIZE } from "./constants";
 import prisma from "./prisma";
+
+const MAX_PAGE_SIZE = 100;
 
 /**
  * ฟังก์ชันตรวจสอบ Prisma Error Code P2025 (ไม่พบข้อมูลในฐานข้อมูล)
@@ -25,53 +29,63 @@ export function isUniqueViolation(error: unknown): boolean {
 }
 
 /**
- * ดึงรายการสินค้า พร้อมการค้นหาและแบ่งหน้า
+ * ดึงรายการสินค้า พร้อมค้นหา กรอง เรียงลำดับ และแบ่งหน้า
  */
 export async function listProducts(params: {
   search?: string;
   category?: string;
-  status?: string;
-  sort?: string;
+  status?: string; // active | inactive
+  stock?: string; // ok | low | out
+  sort?: string; // newest | name | price_asc | price_desc | stock_asc
   page?: number;
-  limit?: number;
+  pageSize?: number;
 }) {
-  const page = Number(params.page) || 1;
-  const limit = Number(params.limit) || 10;
-  const skip = (page - 1) * limit;
+  const pageSize = Math.min(
+    MAX_PAGE_SIZE,
+    Math.max(1, Math.floor(Number(params.pageSize)) || PAGE_SIZE),
+  );
+  const page = Math.max(1, Math.floor(Number(params.page)) || 1);
 
-  const where: any = {};
+  const where: Prisma.ProductWhereInput = {};
 
-  if (params.search && params.search.trim() !== "") {
+  const search = params.search?.trim();
+  if (search) {
     where.OR = [
-      { sku: { contains: params.search } },
-      { name: { contains: params.search } },
-      { description: { contains: params.search } },
+      { sku: { contains: search } },
+      { name: { contains: search } },
+      { description: { contains: search } },
     ];
   }
 
-  if (params.category && params.category.trim() !== "") {
+  if (params.category?.trim()) {
     where.category = params.category;
   }
 
-  if (params.status && params.status.trim() !== "") {
-    where.status = params.status === "active";
-  }
+  if (params.status === "active") where.status = true;
+  else if (params.status === "inactive") where.status = false;
 
-  // กำหนดการเรียงลำดับ
-  let orderBy: any = { createdAt: "desc" };
-  if (params.sort === "price_asc") {
-    orderBy = { price: "asc" };
-  } else if (params.sort === "price_desc") {
-    orderBy = { price: "desc" };
-  }
+  if (params.stock === "out") where.stock = 0;
+  else if (params.stock === "low") where.stock = { gt: 0, lte: LOW_STOCK_THRESHOLD };
+  else if (params.stock === "ok") where.stock = { gt: LOW_STOCK_THRESHOLD };
+
+  const orderBy: Prisma.ProductOrderByWithRelationInput =
+    params.sort === "name"
+      ? { name: "asc" }
+      : params.sort === "price_asc"
+        ? { price: "asc" }
+        : params.sort === "price_desc"
+          ? { price: "desc" }
+          : params.sort === "stock_asc"
+            ? { stock: "asc" }
+            : { createdAt: "desc" };
 
   try {
     const [items, total] = await Promise.all([
       prisma.product.findMany({
         where,
         orderBy,
-        skip,
-        take: limit,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
       }),
       prisma.product.count({ where }),
     ]);
@@ -80,10 +94,11 @@ export async function listProducts(params: {
       items,
       total,
       page,
-      totalPages: Math.ceil(total / limit) || 1,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize) || 1,
     };
   } catch (error) {
     console.error("Error in listProducts:", error);
-    return { items: [], total: 0, page: 1, totalPages: 1 };
+    return { items: [], total: 0, page: 1, pageSize, totalPages: 1 };
   }
 }

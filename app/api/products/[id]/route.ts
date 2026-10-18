@@ -19,7 +19,7 @@ const notFound = () =>
 
 // GET /api/products/:id
 export async function GET(request: Request, { params }: Ctx) {
-  const guard = await requireApiRole(request, ["ADMIN", "STAFF", "USER"]);
+  const guard = await requireApiRole(request, ["ADMIN", "STAFF"]);
   if (guard.error) return guard.error;
 
   const id = parseId((await params).id);

@@ -69,3 +69,17 @@ export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email()),
   password: z.string().min(1),
 });
+
+
+// ---------- ผู้ดูแลระบบจัดการผู้ใช้ ----------
+export const roleSchema = z.enum(["ADMIN", "STAFF"], "สิทธิ์ไม่ถูกต้อง");
+
+export const adminCreateUserSchema = z.object({
+  name: z.string().trim().min(1, "กรุณากรอกชื่อ").max(80, "ชื่อยาวเกินไป"),
+  email: z.string().trim().toLowerCase().pipe(z.email("รูปแบบอีเมลไม่ถูกต้อง")),
+  password: z
+    .string()
+    .min(8, "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร")
+    .max(72, "รหัสผ่านต้องไม่เกิน 72 ตัวอักษร"),
+  role: roleSchema,
+});

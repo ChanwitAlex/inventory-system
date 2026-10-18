@@ -33,8 +33,18 @@ export default async function AdminPage() {
   ];
 
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-semibold">ภาพรวมสำหรับผู้ดูแลระบบ</h1>
+    <div className="p-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold">ภาพรวมสำหรับผู้ดูแลระบบ</h1>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/products" className="btn-primary">
+            📦 จัดการสินค้าในคลัง
+          </Link>
+          <Link href="/admin/users" className="btn-ghost">
+            👥 จัดการบัญชีผู้ใช้
+          </Link>
+        </div>
+      </div>
 
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
@@ -75,7 +85,6 @@ export default async function AdminPage() {
           <ul className="space-y-1 text-sm">
             <li className="flex justify-between"><span>ผู้ดูแลระบบ</span><span className="tabular-nums">{userCount("ADMIN")}</span></li>
             <li className="flex justify-between"><span>เจ้าหน้าที่</span><span className="tabular-nums">{userCount("STAFF")}</span></li>
-            <li className="flex justify-between"><span>ผู้ใช้ทั่วไป</span><span className="tabular-nums">{userCount("USER")}</span></li>
           </ul>
           <Link href="/admin/users" className="btn-ghost mt-4 w-full">จัดการผู้ใช้</Link>
         </section>

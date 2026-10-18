@@ -105,6 +105,7 @@ export async function deleteProduct(id: number) {
 
 /**
  * ฟังก์ชันปรับปรุงสต็อก (รับเข้า IN / เบิกจ่าย OUT)
+ * ใช้ increment/decrement ใน query เดียว เพื่อไม่ให้สต็อกเพี้ยนเมื่อมีหลายคนเบิกพร้อมกัน
  */
 export async function adjustStock(
   id: number,
@@ -113,27 +114,32 @@ export async function adjustStock(
 ): Promise<{ success: boolean; message: string }> {
   await requirePageRole(["ADMIN", "STAFF"]);
 
-  if (!amount || amount <= 0) {
-    return { success: false, message: "จำนวนต้องมากกว่า 0" };
+  if (!Number.isInteger(amount) || amount <= 0) {
+    return { success: false, message: "จำนวนต้องเป็นจำนวนเต็มที่มากกว่า 0" };
+  }
+  if (amount > 1_000_000) {
+    return { success: false, message: "จำนวนสูงเกินไป" };
   }
 
   try {
-    const product = await prisma.product.findUnique({ where: { id } });
-
-    if (!product) {
-      return { success: false, message: "ไม่พบสินค้าในระบบ" };
+    if (type === "IN") {
+      await prisma.product.update({ where: { id }, data: { stock: { increment: amount } } });
+    } else {
+      // ลดเฉพาะเมื่อสต็อกพอ ตรวจและลดใน query เดียว
+      const { count } = await prisma.product.updateMany({
+        where: { id, stock: { gte: amount } },
+        data: { stock: { decrement: amount } },
+      });
+      if (count === 0) {
+        const exists = await prisma.product.findUnique({ where: { id }, select: { id: true } });
+        return {
+          success: false,
+          message: exists
+            ? "จำนวนสินค้าคงเหลือไม่เพียงพอสำหรับเบิกจ่าย"
+            : "ไม่พบสินค้าในระบบ",
+        };
+      }
     }
-
-    if (type === "OUT" && product.stock < amount) {
-      return { success: false, message: "จำนวนสินค้าคงเหลือไม่เพียงพอสำหรับเบิกจ่าย" };
-    }
-
-    const newStock = type === "IN" ? product.stock + amount : product.stock - amount;
-
-    await prisma.product.update({
-      where: { id },
-      data: { stock: newStock },
-    });
 
     revalidatePath("/products");
     return { success: true, message: "ปรับปรุงสต็อกเรียบร้อยแล้ว" };
