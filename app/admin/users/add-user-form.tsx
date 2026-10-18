@@ -1,3 +1,7 @@
+/**
+ * ไฟล์: app/admin/users/add-user-form.tsx — ฟอร์มเพิ่มผู้ใช้ใหม่ (Client Component)
+ * กรอก ชื่อ อีเมล รหัสผ่าน และเลือกสิทธิ์ แล้วเรียก createStaffUser แสดงผลสำเร็จ/ผิดพลาดใต้ฟอร์ม
+ */
 "use client";
 
 import { useState } from "react";

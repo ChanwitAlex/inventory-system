@@ -1,3 +1,8 @@
+/**
+ * ไฟล์: app/products/product-form.tsx — ฟอร์มสินค้า (ใช้ร่วมกันทั้ง 'เพิ่ม' และ 'แก้ไข')
+ * เป็น Client Component เพราะต้องแสดงสถานะ 'กำลังบันทึก' และ error ทันทีโดยไม่โหลดหน้าใหม่
+ * รับ action เข้ามา: หน้าเพิ่มส่ง createProduct, หน้าแก้ไขส่ง updateProduct
+ */
 "use client";
 
 import Link from "next/link";
@@ -5,6 +10,7 @@ import { useActionState } from "react";
 import { CATEGORIES } from "@/app/lib/constants";
 import type { ProductFormState } from "./actions";
 
+// ค่าเริ่มต้นของแต่ละช่อง (หน้าเพิ่ม = ค่าว่าง, หน้าแก้ไข = ข้อมูลเดิมของสินค้า)
 export type ProductDefaults = {
   sku: string;
   name: string;
@@ -22,13 +28,18 @@ type Props = {
 };
 
 export default function ProductForm({ action, defaults, submitLabel }: Props) {
+  // useActionState: เรียก action เมื่อกดบันทึก
+  // state = ผลที่ได้กลับมา (errors/values), pending = กำลังบันทึกอยู่หรือไม่
   const [state, formAction, pending] = useActionState<ProductFormState, FormData>(action, {});
 
   // ถ้าบันทึกไม่ผ่าน ให้คงค่าที่ผู้ใช้กรอกไว้ ไม่ให้ฟอร์มถูกล้าง
+  // ถ้าบันทึกไม่ผ่าน ให้แสดงค่าที่ผู้ใช้เพิ่งกรอก (ไม่ล้างฟอร์ม) ไม่งั้นใช้ค่าเริ่มต้น
   const v = (state.values as Partial<ProductDefaults> | undefined) ?? defaults;
+  // ดึงข้อความ error ของช่องนั้น ๆ มาแสดงใต้ช่อง (ข้อ 2 Validation ที่ผู้ใช้มองเห็น)
   const err = (f: string) => state.errors?.[f]?.[0];
 
   return (
+    // noValidate = ปิดการตรวจของเบราว์เซอร์ ให้เซิร์ฟเวอร์ตรวจเองด้วยกฎใน validation.ts เพื่อได้ข้อความภาษาไทยชุดเดียวกัน
     <form action={formAction} className="card space-y-5 p-6" noValidate>
       {state.message && (
         <p role="alert" className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">

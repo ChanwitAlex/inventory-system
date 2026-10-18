@@ -1,3 +1,8 @@
+/**
+ * ไฟล์: app/products/stock-buttons.tsx — ปุ่ม 'รับเข้า' / 'เบิกจ่าย' สต็อก
+ * กดแล้วมีช่องถามจำนวน -> ตรวจเบื้องต้นบนหน้าเว็บ -> เรียก adjustStock บนเซิร์ฟเวอร์
+ * (เซิร์ฟเวอร์ตรวจซ้ำอีกชั้นว่าสต็อกพอจริงหรือไม่)
+ */
 "use client";
 
 import { useState } from "react";
@@ -12,6 +17,7 @@ export default function StockButtons({
 }) {
   const [loading, setLoading] = useState(false);
 
+  // ขั้นตอนเมื่อกดปุ่ม: ถามจำนวน -> ตรวจว่าเป็นตัวเลขมากกว่า 0 -> ถ้าเบิกต้องไม่เกินคงเหลือ -> ส่งไปเซิร์ฟเวอร์
   const handleStockUpdate = async (type: "IN" | "OUT") => {
     const title = type === "IN" ? "รับสินค้าเข้าคลัง" : "เบิกจ่ายสินค้าออก";
     const input = prompt(`กรอกจำนวนที่ต้องการ${title}:`, "1");
@@ -29,6 +35,7 @@ export default function StockButtons({
     }
 
     setLoading(true);
+    // ส่งไปปรับสต็อกที่เซิร์ฟเวอร์ ถ้าไม่สำเร็จแสดงข้อความที่ได้กลับมา (หน้าจะรีเฟรชตัวเลขเองเมื่อสำเร็จ)
     const res = await adjustStock(productId, type, amount);
     setLoading(false);
 

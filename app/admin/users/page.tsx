@@ -1,9 +1,14 @@
+/**
+ * ไฟล์: app/admin/users/page.tsx — หน้า 'จัดการผู้ใช้และสิทธิ์' (เฉพาะ ADMIN)
+ * แสดงรายชื่อผู้ใช้ทั้งหมด: อนุมัติผู้สมัคร, เปลี่ยนสิทธิ์ ADMIN/STAFF, ลบผู้ใช้ และเพิ่มผู้ใช้ใหม่
+ * ผลลัพธ์ของแต่ละการกระทำแสดงเป็นข้อความด้านบน (อ่านจาก ?ok= / ?error= ใน URL)
+ */
 import Link from "next/link";
 import prisma from "@/app/lib/prisma";
 import { requirePageRole } from "@/app/lib/permissions";
 import AddUserForm from "./add-user-form";
 import DeleteUserButton from "./delete-user-button";
-import { updateUserRole } from "./actions";
+import { approveUser, updateUserRole } from "./actions";
 
 const ROLE_LABEL = {
   ADMIN: "ผู้ดูแลระบบ",
@@ -17,13 +22,17 @@ export default async function UsersPage({
 }: {
   searchParams: Promise<{ ok?: string; error?: string }>;
 }) {
+  // ตรวจสิทธิ์ ADMIN และเก็บข้อมูลของตัวเอง (ใช้กันไม่ให้แก้/ลบบัญชีตัวเอง)
   const me = await requirePageRole(["ADMIN"]);
   const { ok, error } = await searchParams;
 
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "asc" },
-    select: { id: true, name: true, email: true, role: true, createdAt: true },
+    select: { id: true, name: true, email: true, role: true, approved: true, createdAt: true },
   });
+
+  // นับผู้สมัครที่ยังรออนุมัติ เพื่อแสดงแบนเนอร์เตือน
+  const pending = users.filter((u) => !u.approved).length;
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -39,11 +48,18 @@ export default async function UsersPage({
         </Link>
       </div>
 
+      {/* แบนเนอร์แจ้งว่ามีผู้สมัครรออนุมัติ */}
+      {pending > 0 && (
+        <p className="mb-4 rounded-md bg-warn-soft px-3 py-2 text-sm text-warn">
+          มีผู้สมัครรออนุมัติ {pending} คน — กดปุ่ม “อนุมัติ” ในตารางด้านล่าง
+        </p>
+      )}
       {ok && <p className="mb-4 rounded-md bg-brand-soft px-3 py-2 text-sm text-brand">{ok}</p>}
       {error && (
         <p className="mb-4 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
       )}
 
+      {/* ฟอร์มเพิ่มผู้ใช้ใหม่ (บัญชีที่แอดมินสร้างเองจะอนุมัติให้ทันที) */}
       <section className="card mb-6 p-4">
         <h2 className="mb-3 font-medium">เพิ่มผู้ใช้ใหม่</h2>
         <AddUserForm />
@@ -56,12 +72,14 @@ export default async function UsersPage({
               <th className="px-4 py-3 font-medium">ชื่อ</th>
               <th className="px-4 py-3 font-medium">อีเมล</th>
               <th className="px-4 py-3 font-medium">สิทธิ์</th>
+              <th className="px-4 py-3 font-medium">สถานะ</th>
               <th className="px-4 py-3 font-medium">เพิ่มเมื่อ</th>
               <th className="px-4 py-3 text-center font-medium">จัดการ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
             {users.map((u) => {
+              // ถ้าเป็นแถวของตัวเอง จะไม่แสดงเมนูเปลี่ยนสิทธิ์/ปุ่มลบ (กันล็อกตัวเองออก)
               const isMe = u.id === me.id;
               return (
                 <tr key={u.id} className="align-middle">
@@ -91,12 +109,23 @@ export default async function UsersPage({
                       </form>
                     )}
                   </td>
+                  <td className="px-4 py-3">
+                    <span className={`badge ${u.approved ? "bg-brand-soft text-brand" : "bg-warn-soft text-warn"}`}>
+                      {u.approved ? "ใช้งานได้" : "รออนุมัติ"}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-muted">{dateFmt.format(u.createdAt)}</td>
                   <td className="px-4 py-3 text-center">
                     {isMe ? (
                       <span className="text-xs text-muted">-</span>
                     ) : (
                       <div className="flex items-center justify-center gap-2">
+                        {/* ปุ่ม 'อนุมัติ' แสดงเฉพาะผู้ที่ยังรออนุมัติ */}
+                        {!u.approved && (
+                          <form action={approveUser.bind(null, u.id)}>
+                            <button className="btn-primary btn-sm">อนุมัติ</button>
+                          </form>
+                        )}
                         <DeleteUserButton id={u.id} email={u.email} />
                       </div>
                     )}

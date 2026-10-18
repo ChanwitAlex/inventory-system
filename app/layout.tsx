@@ -1,3 +1,7 @@
+/**
+ * ไฟล์: app/layout.tsx — โครงหลักของทุกหน้า
+ * อ่านสถานะ login แล้วแสดงแถบเมนู (Navbar) เฉพาะเมื่อ login แล้ว หน้าอื่น ๆ จะถูกใส่ใน {children}
+ */
 import type { Metadata } from "next";
 import "./globals.css";
 import { auth } from "@/app/auth";

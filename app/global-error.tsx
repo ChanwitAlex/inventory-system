@@ -1,3 +1,6 @@
+/**
+ * ไฟล์: app/global-error.tsx — หน้าแสดงเมื่อเกิดข้อผิดพลาดร้ายแรงที่ไม่ได้ดักไว้ มีปุ่ม 'ลองใหม่'
+ */
 "use client";
 
 export default function GlobalError({ reset }: { error: Error; reset: () => void }) {

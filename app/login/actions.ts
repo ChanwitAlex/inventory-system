@@ -1,3 +1,8 @@
+/**
+ * ไฟล์: app/login/actions.ts — Server Action ของการ login (ข้อ 3 Authentication)
+ * - authenticate: ตรวจรหัสผ่านผ่าน Auth.js พร้อมจำกัดการลองผิด
+ * - githubSignIn: เริ่ม login ด้วย GitHub
+ */
 "use server";
 
 import { AuthError } from "next-auth";
@@ -6,6 +11,8 @@ import { PENDING_APPROVAL_CODE, signIn } from "@/app/auth";
 export type LoginState = { error?: string };
 
 // จำกัดจำนวนครั้งที่ล็อกอินผิด (เก็บในหน่วยความจำของ server process)
+// จำกัดการเดารหัสผ่าน: นับจำนวนครั้งที่ login ผิดต่ออีเมล (เก็บในหน่วยความจำของเซิร์ฟเวอร์)
+// ผิดครบ 8 ครั้งใน 15 นาที จะถูกบล็อกชั่วคราว
 const attempts = new Map<string, { count: number; first: number }>();
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 8;
@@ -24,11 +31,13 @@ function fail(key: string) {
   else rec.count++;
 }
 
+// กัน open redirect: ยอมให้กลับเฉพาะ path ในเว็บเรา (ขึ้นต้นด้วย / แต่ไม่ใช่ //) ไม่งั้นใช้หน้าแรก
 function safeRedirect(value: FormDataEntryValue | null) {
   const v = typeof value === "string" ? value : "";
   return v.startsWith("/") && !v.startsWith("//") ? v : "/";
 }
 
+// ขั้นตอน: ตรวจว่าถูกบล็อกอยู่ไหม -> เรียก signIn -> ถ้าผิดแยกเป็น 'รออนุมัติ' หรือ 'อีเมล/รหัสผ่านผิด'
 export async function authenticate(
   _prev: LoginState,
   formData: FormData,
@@ -54,6 +63,7 @@ export async function authenticate(
       fail(key);
       return { error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" };
     }
+    // ถ้าไม่ใช่ error ของ Auth.js (เช่น redirect หลัง login สำเร็จ) ต้องโยนต่อให้ Next.js ทำงานเอง
     throw e; // redirect ของ Next.js ต้องถูกโยนต่อ
   }
   return {};

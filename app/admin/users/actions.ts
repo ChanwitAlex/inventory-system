@@ -1,3 +1,9 @@
+/**
+ * ไฟล์: app/admin/users/actions.ts — Server Actions จัดการผู้ใช้ (เฉพาะ ADMIN)
+ *   createStaffUser  เพิ่มผู้ใช้ | updateUserRole  เปลี่ยนสิทธิ์
+ *   deleteUser       ลบผู้ใช้   | approveUser     อนุมัติผู้สมัคร
+ * มีกฎป้องกัน: แก้/ลบบัญชีตัวเองไม่ได้ และต้องเหลือ ADMIN อย่างน้อย 1 คนเสมอ
+ */
 "use server";
 
 import bcrypt from "bcryptjs";
@@ -11,11 +17,13 @@ import { adminCreateUserSchema, roleSchema } from "@/app/lib/validation";
 type CreateUserResult = { success: boolean; message: string };
 
 /** กลับหน้ารายชื่อผู้ใช้พร้อมข้อความแจ้งผล */
+// กลับหน้ารายชื่อผู้ใช้พร้อมข้อความผลลัพธ์ใน URL (ok= สำเร็จ, error= ผิดพลาด)
 function back(kind: "ok" | "error", text: string): never {
   redirect(`/admin/users?${kind}=${encodeURIComponent(text)}`);
 }
 
 /** ตรวจว่าการลบ/ลดสิทธิ์ผู้ใช้คนนี้จะทำให้ไม่เหลือ ADMIN เลยหรือไม่ */
+// ตรวจว่าผู้ใช้คนนี้เป็น ADMIN คนสุดท้ายหรือไม่ (ถ้าใช่ห้ามลบ/ลดสิทธิ์ ไม่งั้นไม่เหลือคนดูแลระบบ)
 async function isLastAdmin(id: string) {
   const target = await prisma.user.findUnique({
     where: { id },
@@ -25,6 +33,7 @@ async function isLastAdmin(id: string) {
   return (await prisma.user.count({ where: { role: "ADMIN", approved: true } })) <= 1;
 }
 
+// เพิ่มผู้ใช้ใหม่: ตรวจข้อมูล -> เข้ารหัสรหัสผ่าน -> สร้างบัญชี (approved อัตโนมัติ)
 export async function createStaffUser(
   _prev: unknown,
   formData: FormData,
@@ -56,6 +65,7 @@ export async function createStaffUser(
   }
 }
 
+// เปลี่ยนสิทธิ์: ห้ามเปลี่ยนของตัวเอง และห้ามลด ADMIN คนสุดท้าย
 export async function updateUserRole(id: string, formData: FormData): Promise<void> {
   const me = await requirePageRole(["ADMIN"]);
 
@@ -77,6 +87,7 @@ export async function updateUserRole(id: string, formData: FormData): Promise<vo
   back("ok", "เปลี่ยนสิทธิ์เรียบร้อยแล้ว");
 }
 
+// ลบผู้ใช้: ห้ามลบตัวเอง และห้ามลบ ADMIN คนสุดท้าย
 export async function deleteUser(id: string): Promise<void> {
   const me = await requirePageRole(["ADMIN"]);
 
@@ -93,6 +104,7 @@ export async function deleteUser(id: string): Promise<void> {
   back("ok", "ลบผู้ใช้เรียบร้อยแล้ว");
 }
 
+// อนุมัติผู้สมัคร: ตั้ง approved = true ผู้ใช้จะ login ได้หลังจากนี้
 export async function approveUser(id: string): Promise<void> {
   await requirePageRole(["ADMIN"]);
 

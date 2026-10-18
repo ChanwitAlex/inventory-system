@@ -1,3 +1,7 @@
+/**
+ * ไฟล์: app/page.tsx — หน้าแรก (/) ไม่มีเนื้อหาของตัวเอง ทำหน้าที่แยกทางให้ผู้ใช้
+ * ยังไม่ login -> /login | ADMIN -> /admin (ภาพรวม) | STAFF -> /products (รายการสินค้า)
+ */
 import { redirect } from "next/navigation";
 import { auth } from "@/app/auth";
 

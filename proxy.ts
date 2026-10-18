@@ -1,3 +1,10 @@
+/**
+ * ไฟล์: proxy.ts — ด่านตรวจชั้นแรก (ข้อ 3 Authentication)
+ * ทำงานก่อนเปิดหน้าใน /products/* และ /admin/* (Next.js 16 เปลี่ยนชื่อจาก middleware เป็น proxy)
+ * 1) ยังไม่ login -> ส่งไปหน้า login (จำหน้าเดิมไว้ใน callbackUrl เพื่อกลับมาหลัง login)
+ * 2) เข้า /admin แต่ไม่ใช่ ADMIN -> ส่งไปหน้า 'ไม่มีสิทธิ์'
+ * ทุกหน้า/Action/API ยังตรวจสิทธิ์ซ้ำอีกชั้น (ดู app/lib/permissions.ts)
+ */
 import { NextResponse } from "next/server";
 import { auth } from "@/app/auth";
 
@@ -17,6 +24,7 @@ export default auth((req) => {
   }
 });
 
+// กำหนดว่า proxy นี้ใช้กับ path ไหนบ้าง
 export const config = {
   matcher: ["/products/:path*", "/admin/:path*"],
 };

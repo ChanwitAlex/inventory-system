@@ -1,3 +1,7 @@
+/**
+ * ไฟล์: app/signup/signup-form.tsx — ฟอร์มสมัครสมาชิก (Client Component)
+ * แสดง error รายช่องที่ได้จาก validation และคงชื่อ/อีเมลที่กรอกไว้เมื่อสมัครไม่ผ่าน
+ */
 "use client";
 
 import { useActionState } from "react";

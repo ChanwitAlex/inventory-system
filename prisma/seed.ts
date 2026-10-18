@@ -1,3 +1,8 @@
+/**
+ * ไฟล์: prisma/seed.ts — ใส่ข้อมูลตัวอย่างลงฐานข้อมูล (รันด้วย npm run db:seed)
+ * 1) สร้างบัญชี Admin และ Staff  2) สร้างสินค้าตัวอย่าง 30 รายการ
+ * รันซ้ำได้ปลอดภัย: ไม่เขียนทับบัญชีที่มีอยู่แล้ว
+ */
 import "dotenv/config";
 import { inspect } from "node:util";
 import bcrypt from "bcryptjs";

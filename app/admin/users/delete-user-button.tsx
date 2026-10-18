@@ -1,3 +1,6 @@
+/**
+ * ไฟล์: app/admin/users/delete-user-button.tsx — ปุ่มลบผู้ใช้ ถามยืนยันก่อนแล้วเรียก deleteUser
+ */
 "use client";
 
 import { deleteUser } from "./actions";

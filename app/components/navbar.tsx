@@ -1,3 +1,7 @@
+/**
+ * ไฟล์: app/components/navbar.tsx — แถบเมนูด้านบน
+ * แสดงชื่อผู้ใช้ + ระดับสิทธิ์, ปุ่ม 'จัดการผู้ใช้' (เฉพาะ ADMIN) และปุ่ม 'ออกจากระบบ'
+ */
 import Link from "next/link";
 import { signOut } from "@/app/auth";
 import { canManageUsers } from "@/app/lib/permissions";
@@ -40,6 +44,7 @@ export default function Navbar({
           </div>
 
           <form
+            // ปุ่มออกจากระบบ: Server Action เล็ก ๆ ที่เรียก signOut แล้วไปหน้า login
             action={async () => {
               "use server";
               await signOut({ redirectTo: "/login" });

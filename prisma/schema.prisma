@@ -1,3 +1,7 @@
+// ไฟล์: prisma/schema.prisma — โครงสร้างฐานข้อมูล (SQLite) ของระบบ
+// มี 2 ตารางหลัก: User (ผู้ใช้/สิทธิ์) และ Product (สินค้า/สต็อก)
+// Prisma จะสร้างโค้ดเรียกฐานข้อมูลให้อัตโนมัติจากไฟล์นี้ (npx prisma generate)
+
 generator client {
   provider = "prisma-client"
   output   = "../app/generated/prisma"
@@ -7,15 +11,20 @@ datasource db {
   provider = "sqlite"
 }
 
+// สิทธิ์ของผู้ใช้ มี 2 ระดับ
+// - ADMIN: ทำได้ทุกอย่าง รวมลบสินค้าและจัดการผู้ใช้
+// - STAFF: เพิ่ม/แก้ไขสินค้า และรับเข้า-เบิกจ่ายสต็อก (ลบไม่ได้)
 enum Role {
   ADMIN
   STAFF
 }
 
+// ตารางผู้ใช้ (ข้อ 3 Authentication) — ใช้ตรวจ login และตรวจสิทธิ์
 model User {
   id           String   @id @default(cuid())
   name         String?
   email        String   @unique
+  // เก็บรหัสผ่านที่เข้ารหัสด้วย bcrypt แล้ว ไม่เก็บรหัสผ่านจริง
   passwordHash String
   role         Role     @default(STAFF)
   approved     Boolean  @default(true) // false = สมัครเองและรอผู้ดูแลระบบอนุมัติ
@@ -23,18 +32,22 @@ model User {
   updatedAt    DateTime @updatedAt
 }
 
+// ตารางสินค้า (ข้อ 1 CRUD) — ข้อมูลที่หน้า รายการ/เพิ่ม/แก้ไข/ลบ และ API ใช้ร่วมกัน
 model Product {
   id          Int      @id @default(autoincrement())
+  // รหัสสินค้า ห้ามซ้ำ (@unique) — ถ้าซ้ำ Prisma จะแจ้ง error P2002 แล้วระบบตอบ 409
   sku         String   @unique
   name        String
   category    String
   description String?
   price       Float
+  // จำนวนคงเหลือ: 0 = หมด, 1-10 = ใกล้หมด, มากกว่า 10 = ปกติ
   stock       Int      @default(0)
   status      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // index ช่วยให้ค้นหา/กรองตามหมวดหมู่และชื่อเร็วขึ้น (ข้อ 4 Search + Filter)
   @@index([category])
   @@index([name])
 }

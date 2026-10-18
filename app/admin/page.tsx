@@ -1,3 +1,7 @@
+/**
+ * ไฟล์: app/admin/page.tsx — หน้า 'ภาพรวมสำหรับผู้ดูแลระบบ' (เฉพาะ ADMIN)
+ * สรุปตัวเลข: สินค้าทั้งหมด, ใกล้หมด, หมดสต็อก, มูลค่าสต็อก, จำนวนผู้ใช้ และรายการสินค้าที่ต้องสั่งเพิ่ม
+ */
 import Link from "next/link";
 import prisma from "@/app/lib/prisma";
 import { LOW_STOCK_THRESHOLD } from "@/app/lib/constants";
@@ -8,6 +12,7 @@ const baht = new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB"
 export default async function AdminPage() {
   await requirePageRole(["ADMIN"]);
 
+  // ดึงตัวเลขสรุปทั้งหมดพร้อมกัน (Promise.all) เพื่อให้หน้าโหลดเร็ว
   const [total, active, low, out, users, prices, recent] = await Promise.all([
     prisma.product.count(),
     prisma.product.count({ where: { status: true } }),
@@ -22,9 +27,11 @@ export default async function AdminPage() {
     }),
   ]);
 
+  // มูลค่าสต็อกรวม = ผลรวมของ (ราคา x จำนวนคงเหลือ) ของทุกสินค้า
   const stockValue = prices.reduce((sum, p) => sum + p.price * p.stock, 0);
   const userCount = (r: string) => users.find((u) => u.role === r)?._count ?? 0;
 
+  // การ์ดสรุป 4 ใบที่แสดงด้านบนของหน้า
   const stats = [
     { label: "สินค้าทั้งหมด", value: total, note: `เปิดขาย ${active} รายการ` },
     { label: "ใกล้หมด", value: low, note: `เหลือไม่เกิน ${LOW_STOCK_THRESHOLD} ชิ้น`, warn: low > 0 },

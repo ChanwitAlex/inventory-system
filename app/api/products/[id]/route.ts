@@ -1,3 +1,10 @@
+/**
+ * ไฟล์: app/api/products/[id]/route.ts — REST API จัดการสินค้ารายชิ้น (ข้อ 5)
+ *   GET    /api/products/:id   ดูสินค้าชิ้นเดียว
+ *   PUT    /api/products/:id   แก้ไขสินค้า (ต้องส่งข้อมูลครบทุกฟิลด์)
+ *   DELETE /api/products/:id   ลบสินค้า (เฉพาะ ADMIN ที่ login — x-api-key ลบไม่ได้)
+ * รหัสตอบกลับ: 400 id ไม่ใช่ตัวเลข, 404 ไม่พบสินค้า, 409 SKU ซ้ำ
+ */
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/app/lib/prisma";
@@ -7,6 +14,7 @@ import { productSchema } from "@/app/lib/validation";
 
 type Ctx = { params: Promise<{ id: string }> };
 
+// แปลง id จาก URL เป็นเลขจำนวนเต็มบวก ถ้าไม่ใช่ (เช่น /abc) คืน null -> ตอบ 400
 function parseId(id: string) {
   const n = Number(id);
   return Number.isInteger(n) && n > 0 ? n : null;
@@ -18,6 +26,7 @@ const notFound = () =>
   NextResponse.json({ message: "ไม่พบสินค้า" }, { status: 404 });
 
 // GET /api/products/:id
+// GET: ดูสินค้าชิ้นเดียว ไม่พบตอบ 404
 export async function GET(request: Request, { params }: Ctx) {
   const guard = await requireApiRole(request, ["ADMIN", "STAFF"]);
   if (guard.error) return guard.error;
@@ -30,6 +39,7 @@ export async function GET(request: Request, { params }: Ctx) {
 }
 
 // PUT /api/products/:id
+// PUT: แก้ไขสินค้า ทำทีละขั้น: ตรวจสิทธิ์ -> ตรวจ id -> อ่าน JSON -> ตรวจข้อมูล -> อัปเดต
 export async function PUT(request: Request, { params }: Ctx) {
   const guard = await requireApiRole(request, ["ADMIN", "STAFF"]);
   if (guard.error) return guard.error;
@@ -53,9 +63,11 @@ export async function PUT(request: Request, { params }: Ctx) {
   }
 
   try {
+    // อัปเดตข้อมูลสินค้า
     const product = await prisma.product.update({ where: { id }, data: parsed.data });
     return NextResponse.json(product);
   } catch (e) {
+    // ไม่พบ id นี้ในฐานข้อมูล -> 404 (ซ้ำกันอีกที่ในฟังก์ชันถัดไป)
     if (isNotFound(e)) return notFound();
     if (isUniqueViolation(e)) {
       return NextResponse.json({ message: "รหัสสินค้านี้มีอยู่แล้ว" }, { status: 409 });
@@ -65,6 +77,8 @@ export async function PUT(request: Request, { params }: Ctx) {
 }
 
 // DELETE /api/products/:id  (เฉพาะ ADMIN)
+// DELETE: ลบสินค้า — ใช้ requireApiRole(['ADMIN']) จึงเฉพาะ ADMIN เท่านั้น
+// (STAFF หรือ x-api-key จะได้ 403)
 export async function DELETE(request: Request, { params }: Ctx) {
   const guard = await requireApiRole(request, ["ADMIN"]);
   if (guard.error) return guard.error;

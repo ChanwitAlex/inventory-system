@@ -1,3 +1,8 @@
+/**
+ * ไฟล์: app/login/page.tsx — หน้า 'เข้าสู่ระบบ' (ข้อ 3 Authentication)
+ * ถ้า login อยู่แล้วจะเด้งไปหน้าแรก, รับ callbackUrl เพื่อกลับหน้าเดิมหลัง login
+ * แสดงข้อความ 'สมัครสำเร็จ รอแอดมินอนุมัติ' เมื่อมาจากหน้าสมัคร และปุ่ม GitHub เมื่อเปิดใช้
+ */
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, githubEnabled } from "@/app/auth";

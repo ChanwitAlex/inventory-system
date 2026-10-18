@@ -1,3 +1,7 @@
+/**
+ * ไฟล์: app/login/login-form.tsx — ฟอร์ม login (Client Component)
+ * ส่งอีเมล/รหัสผ่านไปที่ authenticate (app/login/actions.ts) และแสดงข้อความผิดพลาดที่ได้กลับมา
+ */
 "use client";
 
 import { useActionState } from "react";
@@ -8,6 +12,7 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
 
   return (
     <form action={action} className="space-y-4">
+      {/* ฝังหน้าที่ต้องกลับไปหลัง login ไว้ในฟอร์ม (ผู้ใช้มองไม่เห็น) */}
       <input type="hidden" name="callbackUrl" value={callbackUrl} />
 
       <div>

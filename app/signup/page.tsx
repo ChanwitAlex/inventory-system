@@ -1,8 +1,13 @@
+/**
+ * ไฟล์: app/signup/page.tsx — หน้า 'สมัครสมาชิก' (ข้อ 3 Authentication)
+ * ฟอร์มกรอกชื่อ อีเมล รหัสผ่าน ยืนยันรหัสผ่าน (ตรวจด้วย signUpSchema) ส่งไปที่ signUp ใน app/signup/actions.ts
+ */
 "use client";
 
 import { useActionState } from "react";
 import { signUp, type SignUpState } from "./actions";
 
+// แสดงข้อความ error ใต้ช่องกรอก (แสดงข้อความแรกของช่องนั้น)
 function FieldError({ messages }: { messages?: string[] }) {
   return messages?.[0] ? <p className="field-error">{messages[0]}</p> : null;
 }

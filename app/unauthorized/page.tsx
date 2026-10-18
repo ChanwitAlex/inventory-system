@@ -1,3 +1,7 @@
+/**
+ * ไฟล์: app/unauthorized/page.tsx — หน้าแจ้ง 'ไม่มีสิทธิ์เข้าหน้านี้'
+ * ผู้ใช้จะมาที่นี่เมื่อพยายามเข้าหน้าที่สิทธิ์ไม่พอ (เช่น STAFF เข้า /admin)
+ */
 import Link from "next/link";
 
 export default function UnauthorizedPage() {
