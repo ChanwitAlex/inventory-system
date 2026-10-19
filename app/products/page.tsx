@@ -37,17 +37,17 @@ function StockCell({ stock }: { stock: number }) {
   const out = stock === 0;
   const low = !out && stock <= LOW_STOCK_THRESHOLD;
   const pct = Math.min(100, Math.round((stock / (LOW_STOCK_THRESHOLD * 3)) * 100));
-  const color = out ? "bg-danger" : low ? "bg-warn" : "bg-brand";
+  const color = out ? "bg-danger" : low ? "bg-warn" : "bg-ok";
 
   return (
     <div className="min-w-24">
       <div className="flex items-baseline gap-2">
-        <span className="font-medium tabular-nums">{stock}</span>
+        <span className="font-semibold tabular-nums">{stock}</span>
         {out && <span className="text-xs font-bold text-danger">หมด</span>}
         {low && <span className="text-xs font-semibold text-warn">ใกล้หมด</span>}
       </div>
-      <div className="mt-1 h-1 w-full rounded-full bg-line">
-        <div className={`h-1 rounded-full ${color}`} style={{ width: `${out ? 0 : Math.max(pct, 4)}%` }} />
+      <div className="mt-1.5 h-1.5 w-full rounded-full bg-line">
+        <div className={`h-1.5 rounded-full ${color}`} style={{ width: `${out ? 0 : Math.max(pct, 4)}%` }} />
       </div>
     </div>
   );
@@ -92,7 +92,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       {/* ส่วนหัวหน้า: ชื่อหน้า, จำนวนที่พบ และปุ่มด้านขวา (ตามสิทธิ์) */}
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">สินค้าในคลัง</h1>
+          <h1 className="page-title">สินค้าในคลัง</h1>
           <p className="text-sm text-muted">พบ {total} รายการ</p>
         </div>
 
@@ -115,7 +115,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 
       {/* แถบแจ้งผลหลังบันทึกสำเร็จ */}
       {sp.saved && SAVED_TEXT[sp.saved] && (
-        <p className="mb-4 rounded-md bg-brand-soft px-3 py-2 text-sm text-brand">
+        <p className="mb-4 rounded-lg border border-ok/20 bg-ok-soft px-3 py-2 text-sm font-medium text-ok">
           {SAVED_TEXT[sp.saved]}
         </p>
       )}
@@ -179,7 +179,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             {/* วนลูปแสดงสินค้าทีละแถว */}
             {items.map((p) => (
               <tr key={p.id} className="align-top">
-                <td className="px-4 py-3 font-mono text-xs">{p.sku}</td>
+                <td className="px-4 py-3 font-mono text-xs text-muted">{p.sku}</td>
                 <td className="px-4 py-3">
                   <div className="font-medium">{p.name}</div>
                   {p.description && (
@@ -190,7 +190,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                 <td className="px-4 py-3 text-right tabular-nums">{baht.format(p.price)}</td>
                 <td className="px-4 py-3"><StockCell stock={p.stock} /></td>
                 <td className="px-4 py-3">
-                  <span className={`badge ${p.status ? "bg-brand-soft text-brand" : "bg-paper text-muted"}`}>
+                  <span className={`badge ${p.status ? "bg-ok-soft text-ok" : "bg-paper text-muted"}`}>
                     {p.status ? "เปิดขาย" : "ปิดขาย"}
                   </span>
                 </td>

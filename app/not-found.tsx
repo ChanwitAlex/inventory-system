@@ -5,8 +5,8 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <div className="card mx-auto max-w-md p-8 text-center">
-      <h1 className="text-xl font-semibold">ไม่พบหน้าที่ต้องการ</h1>
+    <div className="card mx-auto mt-10 w-[calc(100%-2rem)] max-w-md p-8 text-center">
+      <h1 className="text-xl font-bold">ไม่พบหน้าที่ต้องการ</h1>
       <p className="mt-2 text-muted">ลิงก์อาจผิด หรือข้อมูลถูกลบไปแล้ว</p>
       <Link href="/products" className="btn-primary mt-5">
         กลับไปรายการสินค้า

@@ -1,11 +1,12 @@
 /**
- * ไฟล์: app/login/page.tsx — หน้า 'เข้าสู่ระบบ' (ข้อ 3 Authentication)
- * ถ้า login อยู่แล้วจะเด้งไปหน้าแรก, รับ callbackUrl เพื่อกลับหน้าเดิมหลัง login
- * แสดงข้อความ 'สมัครสำเร็จ รอแอดมินอนุมัติ' เมื่อมาจากหน้าสมัคร และปุ่ม GitHub เมื่อเปิดใช้
+ * หน้าเข้าสู่ระบบ /login
+ * แสดงฟอร์ม login, ปุ่ม GitHub (ถ้าเปิดใช้) และลิงก์ไปสมัครสมาชิก
+ * โครงหน้า (ซ้าย-ขวา) อยู่ใน components/auth-shell.tsx
  */
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, githubEnabled } from "@/app/auth";
+import AuthShell from "@/app/components/auth-shell";
 import LoginForm from "./login-form";
 import { githubSignIn } from "./actions";
 
@@ -13,48 +14,51 @@ type Props = {
   searchParams: Promise<{ callbackUrl?: string; registered?: string }>;
 };
 
+// หน้า login (Server Component)
 export default async function LoginPage({ searchParams }: Props) {
   const session = await auth();
+  // login อยู่แล้วไม่ต้องเห็นหน้านี้ ส่งกลับหน้าแรก
   if (session?.user) redirect("/");
 
+  // callbackUrl = หน้าที่จะกลับไปหลัง login / registered = เพิ่งสมัครเสร็จ
   const { callbackUrl, registered } = await searchParams;
 
   return (
-    <div className="mx-auto mt-10 max-w-sm">
-      <div className="mb-6 text-center">
-        <h1 className="text-2xl font-semibold text-brand">ระบบจัดการสินค้าและคลังสินค้า</h1>
-        <p className="mt-1 text-sm text-muted">เข้าสู่ระบบเพื่อจัดการสต็อกสินค้า</p>
-      </div>
+    <AuthShell
+      title="เข้าสู่ระบบ"
+      subtitle="ใช้อีเมลและรหัสผ่านของคุณเพื่อจัดการสต็อกสินค้า"
+      footer={
+        <>
+          ยังไม่มีบัญชี?{" "}
+          <Link href="/signup" className="font-semibold text-brand hover:underline">
+            สมัครสมาชิก
+          </Link>
+        </>
+      }
+    >
+      {/* แจ้งผู้ที่เพิ่งสมัครว่าต้องรอผู้ดูแลระบบอนุมัติ */}
+      {registered && (
+        <p className="mb-4 rounded-lg border border-ok/20 bg-ok-soft px-3 py-2 text-sm font-medium text-ok">
+          สมัครสมาชิกเรียบร้อยแล้ว กรุณารอผู้ดูแลระบบอนุมัติก่อนเข้าสู่ระบบ
+        </p>
+      )}
 
-      <div className="card p-6">
-        {registered && (
-          <p className="mb-4 rounded-md bg-brand-soft px-3 py-2 text-sm text-brand">
-            สมัครสมาชิกเรียบร้อยแล้ว กรุณารอผู้ดูแลระบบอนุมัติก่อนเข้าสู่ระบบ
-          </p>
-        )}
+      {/* ฟอร์ม login (Client Component) */}
+      <LoginForm callbackUrl={callbackUrl ?? "/"} />
 
-        <LoginForm callbackUrl={callbackUrl ?? "/"} />
-
-        {githubEnabled && (
-          <>
-            <div className="my-4 flex items-center gap-3 text-xs text-muted">
-              <span className="h-px flex-1 bg-line" />
-              หรือ
-              <span className="h-px flex-1 bg-line" />
-            </div>
-            <form action={githubSignIn}>
-              <button className="btn-ghost w-full">เข้าสู่ระบบด้วย GitHub</button>
-            </form>
-          </>
-        )}
-      </div>
-
-      <p className="mt-4 text-center text-sm text-muted">
-        ยังไม่มีบัญชี?{" "}
-        <Link href="/signup" className="font-medium text-brand hover:underline">
-          สมัครสมาชิก
-        </Link>
-      </p>
-    </div>
+      {/* ปุ่ม GitHub แสดงเมื่อตั้งค่า env ครบเท่านั้น */}
+      {githubEnabled && (
+        <>
+          <div className="my-4 flex items-center gap-3 text-xs text-muted">
+            <span className="h-px flex-1 bg-line" />
+            หรือ
+            <span className="h-px flex-1 bg-line" />
+          </div>
+          <form action={githubSignIn}>
+            <button className="btn-ghost w-full">เข้าสู่ระบบด้วย GitHub</button>
+          </form>
+        </>
+      )}
+    </AuthShell>
   );
 }

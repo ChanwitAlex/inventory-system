@@ -38,7 +38,7 @@ export default async function UsersPage({
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">จัดการผู้ใช้และสิทธิ์</h1>
+          <h1 className="page-title">จัดการผู้ใช้และสิทธิ์</h1>
           <p className="text-sm text-muted">
             ผู้ใช้ทั้งหมด {users.length} คน
           </p>
@@ -54,9 +54,9 @@ export default async function UsersPage({
           มีผู้สมัครรออนุมัติ {pending} คน — กดปุ่ม “อนุมัติ” ในตารางด้านล่าง
         </p>
       )}
-      {ok && <p className="mb-4 rounded-md bg-brand-soft px-3 py-2 text-sm text-brand">{ok}</p>}
+      {ok && <p className="mb-4 rounded-lg border border-ok/20 bg-ok-soft px-3 py-2 text-sm font-medium text-ok">{ok}</p>}
       {error && (
-        <p className="mb-4 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
+        <p className="mb-4 rounded-lg border border-danger/20 bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{error}</p>
       )}
 
       {/* ฟอร์มเพิ่มผู้ใช้ใหม่ (บัญชีที่แอดมินสร้างเองจะอนุมัติให้ทันที) */}

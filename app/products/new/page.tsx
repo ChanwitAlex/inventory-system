@@ -11,7 +11,7 @@ export default async function NewProductPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-2xl font-semibold">เพิ่มสินค้าใหม่</h1>
+      <h1 className="mb-6 page-title">เพิ่มสินค้าใหม่</h1>
       <ProductForm
         action={createProduct}
         submitLabel="บันทึกสินค้า"

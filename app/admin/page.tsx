@@ -42,7 +42,7 @@ export default async function AdminPage() {
   return (
     <div className="p-6">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">ภาพรวมสำหรับผู้ดูแลระบบ</h1>
+        <h1 className="page-title">ภาพรวมสำหรับผู้ดูแลระบบ</h1>
         <div className="flex flex-wrap gap-2">
           <Link href="/products" className="btn-primary">
             📦 จัดการสินค้าในคลัง
@@ -55,9 +55,13 @@ export default async function AdminPage() {
 
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
-          <div key={s.label} className="card p-4">
-            <dt className="text-sm text-muted">{s.label}</dt>
-            <dd className={`mt-1 text-2xl font-semibold tabular-nums ${s.danger ? "text-danger" : s.warn ? "text-warn" : ""}`}>
+          // แถบสีซ้ายของการ์ด: แดง = หมดสต็อก, ส้ม = ใกล้หมด, สีหลัก = ปกติ
+          <div
+            key={s.label}
+            className={`card border-l-4 p-5 ${s.danger ? "border-l-danger" : s.warn ? "border-l-warn" : "border-l-brand"}`}
+          >
+            <dt className="text-sm font-medium text-muted">{s.label}</dt>
+            <dd className={`mt-1 text-3xl font-bold tabular-nums ${s.danger ? "text-danger" : s.warn ? "text-warn" : ""}`}>
               {s.value}
             </dd>
             <p className="mt-1 text-xs text-muted">{s.note}</p>

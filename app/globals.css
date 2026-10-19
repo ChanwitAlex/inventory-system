@@ -1,53 +1,109 @@
+/*
+ * สไตล์หลักของเว็บ (Tailwind v4)
+ * แนวคิด: โทน "ฟ้าน้ำเงินเข้ม" แบบคลังสินค้า พื้นหลังเทาอมฟ้า
+ * สีเขียว/ส้ม/แดง ใช้บอกระดับสต็อกเท่านั้น (พอ / ใกล้หมด / หมด) จึงไม่ใช้เป็นสีตกแต่ง
+ */
 @import "tailwindcss";
 
+/* ---------- ค่าสี และฟอนต์ ---------- */
 @theme {
-  --color-ink: #1c2530;
-  --color-muted: #5d6874;
-  --color-paper: #f3f5f2;
-  --color-line: #d9ded8;
-  --color-brand: #1f6f54;
-  --color-brand-dark: #165240;
-  --color-brand-soft: #e3f0ea;
-  --color-warn: #8f5206;
-  --color-warn-soft: #fcefd2;
-  --color-danger: #b42318;
+  --color-ink: #13232f;          /* ตัวอักษรหลัก */
+  --color-muted: #586977;        /* ตัวอักษรรอง */
+  --color-paper: #f1f4f7;        /* พื้นหลังหน้า */
+  --color-line: #d6dee6;         /* เส้นขอบ */
+  --color-brand: #0c5a7a;        /* สีหลัก (ปุ่ม ลิงก์) */
+  --color-brand-dark: #08435c;
+  --color-brand-soft: #def0f7;
+  --color-ok: #14784b;           /* สต็อกพอ / สำเร็จ */
+  --color-ok-soft: #dcf3e7;
+  --color-warn: #96580a;         /* ใกล้หมด */
+  --color-warn-soft: #fcefd0;
+  --color-danger: #b42318;       /* หมด / ผิดพลาด */
   --color-danger-soft: #fde8e6;
+  --color-nav: #0f2230;          /* แถบเมนูและแผงด้านซ้ายหน้า login */
 
-  --font-sans: "Noto Sans Thai", "Sarabun", "Segoe UI", system-ui, -apple-system,
-    "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "IBM Plex Sans Thai", "Noto Sans Thai", "Sarabun", "Segoe UI", system-ui,
+    -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 }
 
+/* ---------- พื้นฐานทั้งหน้า ---------- */
+html {
+  -webkit-text-size-adjust: 100%;
+}
 body {
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  line-height: 1.6;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+::selection {
+  background: var(--color-brand-soft);
+}
+/* เส้นโฟกัสชัดเจนเมื่อใช้คีย์บอร์ด */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
 }
 
+/* ---------- ตาราง: หัวตารางอ่านง่าย และไฮไลต์แถวที่ชี้ ---------- */
+.card table thead {
+  background: color-mix(in srgb, var(--color-brand) 5%, white);
+}
+.card table thead th {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+.card table tbody tr {
+  transition: background-color 0.12s;
+}
+.card table tbody tr:hover {
+  background: color-mix(in srgb, var(--color-brand) 4%, white);
+}
+
+/* ผู้ที่ตั้งค่าลดการเคลื่อนไหวในระบบ จะไม่มีแอนิเมชัน */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ---------- ชิ้นส่วนที่ใช้ซ้ำ (ใช้เป็น class ได้เลย) ---------- */
+/* หัวข้อหน้า */
+@utility page-title {
+  @apply text-2xl font-bold leading-tight text-ink;
+}
+/* การ์ดสีขาว */
 @utility card {
-  @apply rounded-lg border border-line bg-white;
+  @apply rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(19,35,47,0.05)];
 }
 @utility label {
   @apply mb-1 block text-sm font-medium text-ink;
 }
+/* ช่องกรอก / dropdown */
 @utility input {
-  @apply w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink
+  @apply min-h-10 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink
     placeholder:text-muted/70 focus:border-brand focus:outline-none
     focus:ring-2 focus:ring-brand/25 disabled:bg-paper;
 }
 @utility field-error {
   @apply mt-1 text-sm text-danger;
 }
+/* ปุ่ม */
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm
-    font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm
+    font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2
     focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60;
 }
 @utility btn-primary {
-  @apply btn bg-brand text-white hover:bg-brand-dark;
+  @apply btn bg-brand text-white shadow-sm hover:bg-brand-dark;
 }
 @utility btn-ghost {
-  @apply btn border border-line bg-white text-ink hover:bg-paper;
+  @apply btn border border-line bg-white text-ink hover:border-brand/40 hover:bg-brand-soft/40;
 }
 @utility btn-danger {
   @apply btn bg-danger text-white hover:opacity-90;
@@ -55,6 +111,7 @@ body {
 @utility btn-sm {
   @apply px-3 py-1.5 text-xs;
 }
+/* ป้ายสถานะเล็ก ๆ */
 @utility badge {
-  @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-medium;
+  @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold;
 }

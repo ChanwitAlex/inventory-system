@@ -25,7 +25,7 @@ export default async function EditProductPage({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-1 text-2xl font-semibold">แก้ไขสินค้า</h1>
+      <h1 className="mb-1 page-title">แก้ไขสินค้า</h1>
       <p className="mb-6 text-sm text-muted">{product.sku} · {product.name}</p>
       <ProductForm
         // bind: ผูก id ของสินค้านี้เข้ากับ action เพื่อให้รู้ว่าต้องแก้ตัวไหน

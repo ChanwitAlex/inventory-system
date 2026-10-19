@@ -1,51 +1,34 @@
 /**
- * ไฟล์: app/signup/page.tsx — หน้า 'สมัครสมาชิก' (ข้อ 3 Authentication)
- * ฟอร์มกรอกชื่อ อีเมล รหัสผ่าน ยืนยันรหัสผ่าน (ตรวจด้วย signUpSchema) ส่งไปที่ signUp ใน app/signup/actions.ts
+ * หน้าสมัครสมาชิก /signup
+ * ผู้สมัครเองจะได้สิทธิ์ STAFF แต่ต้องรอผู้ดูแลระบบอนุมัติก่อนจึงจะ login ได้
+ * ตัวฟอร์มอยู่ใน signup-form.tsx ส่วนโครงหน้าอยู่ใน components/auth-shell.tsx
  */
-"use client";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { auth } from "@/app/auth";
+import AuthShell from "@/app/components/auth-shell";
+import SignUpForm from "./signup-form";
 
-import { useActionState } from "react";
-import { signUp, type SignUpState } from "./actions";
-
-// แสดงข้อความ error ใต้ช่องกรอก (แสดงข้อความแรกของช่องนั้น)
-function FieldError({ messages }: { messages?: string[] }) {
-  return messages?.[0] ? <p className="field-error">{messages[0]}</p> : null;
-}
-
-export default function SignUpForm() {
-  const [state, action, pending] = useActionState<SignUpState, FormData>(signUp, {});
-  const e = state.errors ?? {};
+// หน้าสมัครสมาชิก (Server Component)
+export default async function SignUpPage() {
+  const session = await auth();
+  // login อยู่แล้วไม่ต้องสมัครซ้ำ
+  if (session?.user) redirect("/");
 
   return (
-    <form action={action} className="space-y-4">
-      <div>
-        <label htmlFor="name" className="label">ชื่อ - นามสกุล</label>
-        <input id="name" name="name" required autoComplete="name" defaultValue={state.values?.name} className="input" />
-        <FieldError messages={e.name} />
-      </div>
-
-      <div>
-        <label htmlFor="email" className="label">อีเมล</label>
-        <input id="email" name="email" type="email" required autoComplete="email" defaultValue={state.values?.email} className="input" placeholder="you@example.com" />
-        <FieldError messages={e.email} />
-      </div>
-
-      <div>
-        <label htmlFor="password" className="label">รหัสผ่าน</label>
-        <input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" className="input" />
-        <p className="mt-1 text-xs text-muted">อย่างน้อย 8 ตัวอักษร</p>
-        <FieldError messages={e.password} />
-      </div>
-
-      <div>
-        <label htmlFor="confirmPassword" className="label">ยืนยันรหัสผ่าน</label>
-        <input id="confirmPassword" name="confirmPassword" type="password" required autoComplete="new-password" className="input" />
-        <FieldError messages={e.confirmPassword} />
-      </div>
-
-      <button type="submit" disabled={pending} className="btn-primary w-full">
-        {pending ? "กำลังสมัคร..." : "สมัครสมาชิก"}
-      </button>
-    </form>
+    <AuthShell
+      title="สมัครสมาชิก"
+      subtitle="บัญชีใหม่ต้องรอผู้ดูแลระบบอนุมัติก่อนเข้าใช้งาน"
+      footer={
+        <>
+          มีบัญชีอยู่แล้ว?{" "}
+          <Link href="/login" className="font-semibold text-brand hover:underline">
+            เข้าสู่ระบบ
+          </Link>
+        </>
+      }
+    >
+      <SignUpForm />
+    </AuthShell>
   );
 }
