@@ -15,24 +15,26 @@ import { z } from "zod";
 // GET /api/products?search=&category=&status=&stock=&sort=&page=&pageSize=
 // GET: ดึงรายการสินค้า — ตัวอย่าง /api/products?search=CPU&stock=low&sort=price_desc&page=1
 export async function GET(request: Request) {
+  // 1. ตรวจสอบสิทธิ์ผู้ใช้งาน
   const guard = await requireApiRole(request, ["ADMIN", "STAFF"]);
   if (guard.error) return guard.error;
 
-  // อ่านเงื่อนไขค้นหา/กรองจาก query string แล้วส่งให้ listProducts (ตัวเดียวกับที่หน้าเว็บใช้)
+  // 2. ดึงข้อมูล Query Parameters จาก URL (พารามิเตอร์หลังตัว ?)
   const sp = new URL(request.url).searchParams;
+  
   try {
+    // 3. ส่งเงื่อนไขการกรอง/ค้นหา ให้ฟังก์ชัน listProducts ไปประมวลผล
     const result = await listProducts({
-      search: sp.get("search") ?? undefined,
-      category: sp.get("category") ?? undefined,
-      status: sp.get("status") ?? undefined,
-      stock: sp.get("stock") ?? undefined,
-      sort: sp.get("sort") ?? undefined,
-      page: Number(sp.get("page")) || 1,
-      pageSize: Number(sp.get("pageSize")) || undefined,
+      search: sp.get("search") ?? undefined,     // คำค้นหา เช่น ชื่อสินค้า
+      category: sp.get("category") ?? undefined, // กรองตามหมวดหมู่
+      sort: sp.get("sort") ?? undefined,         // การเรียงลำดับ (เช่น price_desc)
+      pageSize: Number(sp.get("pageSize")) || undefined, // จำนวนต่อหน้า
     });
 
+    // 4. คืนค่าผลลัพธ์กลับเป็น JSON (ส่ง HTTP Status 200 โดยอัตโนมัติ)
     return NextResponse.json(result);
   } catch (e) {
+    // 5. ดักจับข้อผิดพลาดฝั่ง Server -> คืนค่า Status 500
     console.error("GET /api/products failed:", e);
     return NextResponse.json({ message: "ไม่สามารถดึงรายการสินค้าได้" }, { status: 500 });
   }
@@ -41,35 +43,43 @@ export async function GET(request: Request) {
 // POST /api/products
 // POST: เพิ่มสินค้าใหม่ ทำทีละขั้น: ตรวจสิทธิ์ -> อ่าน JSON -> ตรวจข้อมูล -> บันทึก
 export async function POST(request: Request) {
+  // ชั้นที่ 1: ตรวจสอบสิทธิ์การใช้งาน (ADMIN หรือ STAFF เท่านั้น)
   const guard = await requireApiRole(request, ["ADMIN", "STAFF"]);
   if (guard.error) return guard.error;
 
-  // อ่าน JSON จาก body ถ้ารูปแบบพัง -> 400
+  // ชั้นที่ 2: อ่านและตรวจโครงสร้างไฟล์ JSON
   let body: unknown;
   try {
     body = await request.json();
   } catch {
+    // ถ้ารูปแบบ JSON เสียหาย (เช่น วงเล็บปีกกาไม่ครบ) ตอบกลับด้วย HTTP 400 Bad Request
     return NextResponse.json({ message: "รูปแบบ JSON ไม่ถูกต้อง" }, { status: 400 });
   }
 
-  // ตรวจข้อมูลด้วยกฎใน validation.ts ถ้าไม่ผ่านตอบ 400 พร้อม errors แยกรายฟิลด์
+  // ชั้นที่ 3: ตรวจสอบความถูกต้องของข้อมูลรายฟิลด์ด้วย Zod
   const parsed = productSchema.safeParse(body);
   if (!parsed.success) {
+    // ถ้าพิมพ์ข้อมูลผิดกฎ (เช่น ราคิติดลบ, ลืมใส่ชื่อ) ตอบกลับ HTTP 400 พร้อมแจกแจง error แยกตามชื่อฟิลด์
     return NextResponse.json(
       { message: "ข้อมูลไม่ถูกต้อง", errors: z.flattenError(parsed.error).fieldErrors },
       { status: 400 },
     );
   }
 
+  // ชั้นที่ 4: บันทึกลงฐานข้อมูลและจัดการ Error กรณี SKU ซ้ำ
   try {
-    // บันทึกลงฐานข้อมูล สำเร็จตอบ 201 Created
+    // บันทึกข้อมูลที่ผ่านการตรวจแล้วลงในฐานข้อมูล
     const product = await prisma.product.create({ data: parsed.data });
+    
+    // บันทึกสำเร็จ ตอบกลับด้วยข้อมูลสินค้าที่สร้างใหม่ พร้อม HTTP Status 201 Created
     return NextResponse.json(product, { status: 201 });
   } catch (e) {
-    // SKU ซ้ำกับสินค้าที่มีอยู่ -> 409 Conflict
+    // ตรวจสอบว่า Error เกิดจาก SKU หรือ รหัสสินค้า ซ้ำหรือไม่
     if (isUniqueViolation(e)) {
+      // ตอบกลับ HTTP 409 Conflict เพื่อระบุว่าข้อมูลซ้ำ
       return NextResponse.json({ message: "รหัสสินค้านี้มีอยู่แล้ว" }, { status: 409 });
     }
+    // Error อื่นๆ ของ Server -> ตอบกลับ HTTP 500 Internal Server Error
     return NextResponse.json({ message: "ไม่สามารถบันทึกสินค้าได้" }, { status: 500 });
   }
 }
