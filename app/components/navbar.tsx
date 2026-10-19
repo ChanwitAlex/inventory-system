@@ -1,20 +1,16 @@
 /**
- * แถบเมนูด้านบน (แสดงเมื่อ login แล้ว)
- * โลโก้ -> หน้าแรก, เมนูหลัก (ADMIN เห็น ภาพรวม/สินค้า/ผู้ใช้ ส่วน STAFF เห็นสินค้า),
- * ชื่อ/สิทธิ์ของผู้ใช้, ปุ่มออกจากระบบ
+ * ไฟล์: app/components/navbar.tsx — แถบเมนูด้านบน
+ * แสดงชื่อผู้ใช้ + ระดับสิทธิ์, ปุ่ม 'จัดการผู้ใช้' (เฉพาะ ADMIN) และปุ่ม 'ออกจากระบบ'
  */
 import Link from "next/link";
 import { signOut } from "@/app/auth";
 import { canManageUsers } from "@/app/lib/permissions";
-import NavLink from "./nav-link";
 
-// ข้อความแสดงสิทธิ์ใต้ชื่อผู้ใช้
 const ROLE_LABEL = {
-  ADMIN: "ผู้ดูแลระบบ",
-  STAFF: "เจ้าหน้าที่คลัง",
+  ADMIN: "ผู้ดูแลระบบ (Admin)",
+  STAFF: "เจ้าหน้าที่คลัง (Staff)",
 } as const;
 
-// รับชื่อและสิทธิ์ของผู้ใช้จาก layout
 export default function Navbar({
   name,
   role,
@@ -23,49 +19,42 @@ export default function Navbar({
   role: keyof typeof ROLE_LABEL;
 }) {
   return (
-    <header className="bg-nav text-white">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-2.5 sm:px-6">
-        <div className="flex items-center gap-6">
-          {/* โลโก้: ไอคอนช่องเก็บของ + ชื่อระบบ กดแล้วกลับหน้าแรก */}
-          <Link href="/" className="flex items-center gap-2.5 font-semibold">
-            <span className="grid size-8 place-items-center rounded-lg bg-white/10" aria-hidden="true">
-              <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <rect x="3" y="3" width="8" height="8" rx="1.5" />
-                <rect x="13" y="3" width="8" height="8" rx="1.5" />
-                <rect x="3" y="13" width="8" height="8" rx="1.5" />
-                <rect x="13" y="13" width="8" height="8" rx="1.5" opacity="0.45" />
-              </svg>
-            </span>
-            <span className="hidden sm:inline">ระบบจัดการสินค้า/คลังสินค้า</span>
+    // ใช้ sticky, bg-white/80 และ backdrop-blur-md เพื่อทำเอฟเฟกต์ Glassmorphism เมนูลอยโปร่งแสง
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md shadow-sm">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
+        
+        {/* ฝั่งซ้าย: โลโก้ และ เมนู Admin */}
+        <div className="flex items-center gap-4 sm:gap-6">
+          <Link href="/" className="flex items-center gap-2 text-lg font-bold text-slate-800 hover:text-blue-600 transition-colors">
+            <span className="text-xl">📦</span>
+            {/* ซ่อนข้อความยาวในจอมือถือ แสดงแค่จอใหญ่ */}
+            <span className="hidden sm:inline-block">ระบบจัดการสินค้า/คลังสินค้า</span>
+            <span className="sm:hidden">Inventory</span>
           </Link>
 
-          {/* เมนูหลัก (บนมือถือจะลงไปอยู่บรรทัดล่าง) */}
-          <nav aria-label="เมนูหลัก" className="order-last flex w-full items-center gap-1 sm:order-none sm:w-auto">
-            {canManageUsers(role) && (
-              <NavLink href="/admin" exact>
-                ภาพรวม
-              </NavLink>
-            )}
-            <NavLink href="/products">สินค้า</NavLink>
-            {canManageUsers(role) && <NavLink href="/admin/users">ผู้ใช้และสิทธิ์</NavLink>}
-          </nav>
+          {/* ปุ่มเฉพาะ Admin: จัดการผู้ใช้งาน & ดูประวัติ Logs */}
+          {canManageUsers(role) && (
+            <Link
+              href="/admin/users"
+              className="flex items-center gap-1.5 rounded-full bg-purple-100/80 px-3.5 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-200 transition-colors"
+            >
+              <span>⚙️</span>
+              <span className="hidden sm:inline-block">จัดการผู้ใช้ & สิทธิ์</span>
+              <span className="sm:hidden">จัดการ</span>
+            </Link>
+          )}
         </div>
 
-        <div className="flex items-center gap-3 text-sm">
-          {/* ตัวอักษรแรกของชื่อ + ชื่อ + สิทธิ์ */}
-          <span
-            className="grid size-8 place-items-center rounded-full bg-white/15 text-sm font-semibold"
-            aria-hidden="true"
-          >
-            {name.trim().charAt(0).toUpperCase()}
-          </span>
-          <div className="hidden text-right leading-tight sm:block">
-            <div className="font-medium">{name}</div>
-            <div className="text-xs text-white/65">{ROLE_LABEL[role]}</div>
+        {/* ฝั่งขวา: ข้อมูลผู้ใช้ และ ปุ่มออกจากระบบ */}
+        <div className="flex items-center gap-4 sm:gap-5">
+          {/* ข้อมูลผู้ใช้ (ซ่อนในจอมือถือเพื่อประหยัดพื้นที่) */}
+          <div className="hidden text-right sm:block">
+            <div className="text-sm font-semibold text-slate-800">{name}</div>
+            <div className="text-xs font-medium text-blue-600">{ROLE_LABEL[role]}</div>
           </div>
 
-          {/* ปุ่มออกจากระบบ: server action ล้าง session แล้วไปหน้า login */}
           <form
+            // ปุ่มออกจากระบบ: Server Action เล็ก ๆ ที่เรียก signOut แล้วไปหน้า login
             action={async () => {
               "use server";
               await signOut({ redirectTo: "/login" });
@@ -73,12 +62,13 @@ export default function Navbar({
           >
             <button
               type="submit"
-              className="rounded-lg border border-white/25 px-3 py-1.5 text-white/90 transition-colors hover:bg-white/10"
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all"
             >
               ออกจากระบบ
             </button>
           </form>
         </div>
+        
       </div>
     </header>
   );
