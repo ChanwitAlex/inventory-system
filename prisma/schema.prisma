@@ -8,7 +8,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 // สิทธิ์ของผู้ใช้ มี 2 ระดับ

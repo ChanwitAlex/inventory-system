@@ -12,8 +12,7 @@ import { isUniqueViolation, listProducts } from "@/app/lib/products";
 import { productSchema } from "@/app/lib/validation";
 import { z } from "zod";
 
-// GET /api/products?search=&category=&status=&stock=&sort=&page=&pageSize=
-// GET: ดึงรายการสินค้า — ตัวอย่าง /api/products?search=CPU&stock=low&sort=price_desc&page=1
+// GET: ดึงรายการสินค้า พร้อมรองรับการค้นหา/หมวดหมู่/เรียงตาม
 export async function GET(request: Request) {
   // 1. ตรวจสอบสิทธิ์ผู้ใช้งาน
   const guard = await requireApiRole(request, ["ADMIN", "STAFF"]);
